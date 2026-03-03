@@ -22,7 +22,7 @@ def send_message(text):
     data = {
         "msgtype": "text",
         "text": {
-            "content": f"[监控提醒] 时间：{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n{text}"
+            "content": f"[监控提醒] 时间：{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n{text}。"
         }
     }
     try:
