@@ -2,6 +2,7 @@
 import requests
 import datetime
 import os
+import pytz  # 需要安装 pytz 来处理时区
 
 # ================= 配置区域 =================
 WEBHOOK_URL = os.getenv("DINGTALK_WEBHOOK")
@@ -19,7 +20,7 @@ def send_message(text):
     data = {
         "msgtype": "text",
         "text": {
-            "content": f"[监控] 时间：{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}.\n\n{text}."
+            "content": f"[监控] 时间：{get_beijing_time()}\n\n{text}."
         }
     }
     try:
@@ -31,11 +32,22 @@ def send_message(text):
     except Exception as e:
         print(f"发送异常：{e}")
 
+def get_beijing_time():
+    """获取北京时间"""
+    try:
+        tz = pytz.timezone('Asia/Shanghai')
+        beijing_time = datetime.datetime.now(tz)
+        return beijing_time.strftime('%Y-%m-%d %H:%M')
+    except:
+        # 如果 pytz 不可用，手动 +8 小时
+        utc_time = datetime.datetime.utcnow()
+        beijing_time = utc_time + datetime.timedelta(hours=8)
+        return beijing_time.strftime('%Y-%m-%d %H:%M')
+
 def get_index_data():
     """从新浪财经获取指数数据"""
-    # 新浪财经接口，非常稳定
-    url = f"http://hq.sinajs.cn/rn=/js/zs.js?list={INDEX_SYMBOL}"
-    # 需要设置 referer，否则可能被拦截
+    # 新浪财经接口
+    url = f"http://hq.sinajs.cn/list={INDEX_SYMBOL}"
     headers = {
         "Referer": "http://finance.sina.com.cn/",
         "User-Agent": "Mozilla/5.0"
@@ -44,8 +56,22 @@ def get_index_data():
     resp.encoding = 'gbk'  # 新浪财经是 gbk 编码
     text = resp.text
     
-    # 解析数据格式：var hq_str_zs980017="名称，当前价，昨收，今开，最高，最低，..."
-    data = text.split('"')[1].split(',')
+    # 打印原始数据用于调试
+    print(f"原始数据：{text}")
+    
+    # 检查数据格式
+    if '=' not in text or '"' not in text:
+        raise Exception(f"数据格式异常：{text[:100]}")
+    
+    # 解析数据格式：var hq_str_zs980017="名称，当前价，昨收，今开，最高，最低，涨跌幅，..."
+    data_part = text.split('"')[1]
+    data = data_part.split(',')
+    
+    print(f"解析后数据长度：{len(data)}")
+    print(f"解析后数据：{data[:10]}")  # 打印前 10 个字段
+    
+    if len(data) < 7:
+        raise Exception(f"数据字段不足，只有 {len(data)} 个字段")
     
     result = {
         'name': data[0],
@@ -54,12 +80,13 @@ def get_index_data():
         'open': data[3],
         'high': data[4],
         'low': data[5],
-        'change_percent': float(data[6])  # 涨跌幅
+        'change_percent': float(data[6]) if data[6] else 0.0  # 涨跌幅
     }
     return result
 
 def main():
     print("开始运行监控脚本...")
+    print(f"当前北京时间：{get_beijing_time()}")
     
     try:
         # 获取指数数据
