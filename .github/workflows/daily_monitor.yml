@@ -2,9 +2,9 @@ name: Daily Fund Monitor
 
 于:
   schedule:
-    # Cron 表达式，北京时间每天下午 14:40 运行 (UTC 时间 06:40)
+    # Cron 表达式，北京时间每天下午 14:49 运行 (UTC 时间 06:49)
     # 周一到周五运行
-    - cron: '40 6 * * 1-5'
+    - cron: '49 6 * * 1-5'
   workflow_dispatch: # 允许手动触发测试
 
 jobs:
