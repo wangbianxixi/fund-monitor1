@@ -1,4 +1,3 @@
-# fund-monitor1
-akshare==1.12.80
-requests==2.31.0
-pandas==2.1.4
+akshare
+requests
+pandas
